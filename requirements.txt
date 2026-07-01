@@ -1,0 +1,10 @@
+# ──────────────────────────────────────────────
+# Network Port Scanner — dependencies
+# ──────────────────────────────────────────────
+
+# Rich terminal UI (tables, progress bar, panels, colours)
+rich>=13.7.0
+
+# Optional: SYN scan support (requires root/admin)
+# Install with: pip install scapy
+# scapy>=2.5.0
