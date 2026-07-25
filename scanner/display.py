@@ -7,8 +7,6 @@ from rich.table   import Table
 from rich.text    import Text
 from rich         import box
 
-from .services import HIGH_RISK_PORTS
-
 # Shared console instance
 console = Console(width=130)
 
