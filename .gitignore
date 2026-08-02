@@ -10,4 +10,4 @@ venv/
 .vscode/
 
 # Generated scan reports (test output, not source code)
-scan_report.*
+report.*

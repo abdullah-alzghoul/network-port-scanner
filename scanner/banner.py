@@ -123,37 +123,3 @@ def _clean(raw: str) -> Optional[str]:
     return useful if len(useful) > 3 else None
 
 
-# ──────────────────────────────────────────────
-# HTTP header extraction (used when --banner is set for web ports)
-# ──────────────────────────────────────────────
-
-def get_http_server_header(host: str, port: int,
-                           use_ssl: bool = False,
-                           timeout: float = 2.0) -> Optional[str]:
-    """
-    Return the value of the *Server* HTTP response header, or ``None``.
-    """
-    try:
-        raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        raw.settimeout(timeout)
-        raw.connect((host, port))
-
-        if use_ssl:
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            conn = ctx.wrap_socket(raw, server_hostname=host)
-        else:
-            conn = raw
-
-        req = f"HEAD / HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
-        conn.sendall(req.encode())
-        data = _recv_all(conn, max_bytes=4096)
-        conn.close()
-
-        for line in data.decode("utf-8", errors="replace").splitlines():
-            if line.lower().startswith("server:"):
-                return line.split(":", 1)[1].strip()
-    except Exception:
-        pass
-    return None

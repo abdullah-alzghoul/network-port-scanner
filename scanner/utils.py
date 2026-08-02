@@ -35,26 +35,6 @@ def resolve_target(target: str) -> Optional[Tuple[str, str]]:
             return None
 
 
-def is_private_ip(ip: str) -> bool:
-    """Return True when *ip* falls in a RFC-1918 / loopback range."""
-    try:
-        return ipaddress.ip_address(ip).is_private
-    except ValueError:
-        return False
-
-
-def get_local_ip() -> str:
-    """Return the machine's outbound IP address."""
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except Exception:
-        return "127.0.0.1"
-
-
 # ──────────────────────────────────────────────
 # Host liveness check
 # ──────────────────────────────────────────────

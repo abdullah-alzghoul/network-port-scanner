@@ -11,7 +11,7 @@ Usage examples
   python main.py -t 192.168.1.1 -p 1-500 -s syn          # root only
   python main.py -t 192.168.1.1 -p common -s udp
 
-  Only scan systems you own or have explicit written permission to test.
+Only scan systems you own or have explicit written permission to test.
 """
 
 import argparse
@@ -45,10 +45,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="portscanner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=" Advanced Network Port Scanner",
+        description="Advanced Network Port Scanner",
         epilog=textwrap.dedent("""
         Port specification examples:
-          common          → ~80 well-known ports  (default)
+          common          → 72 well-known ports  (default)
           all             → full 1-65535 sweep
           top100          → first 100 common ports
           1-1024          → range
@@ -60,7 +60,7 @@ def build_parser() -> argparse.ArgumentParser:
           syn  → SYN/half-open     (stealth; requires root + pip install scapy)
           udp  → UDP scan          (open|filtered only)
 
-          Unauthorized scanning is illegal. Use responsibly.
+        Unauthorized scanning is illegal. Use responsibly.
         """),
     )
 
