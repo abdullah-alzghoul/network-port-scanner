@@ -84,7 +84,7 @@ def print_banner() -> None:
 def print_legal_warning() -> None:
     console.print(
         Panel(
-            "[bold yellow]⚠  LEGAL WARNING[/bold yellow]\n"
+            "[bold yellow]  LEGAL WARNING[/bold yellow]\n"
             "[white]Only scan systems you own or have explicit written permission to test.\n"
             "Unauthorized port scanning may be illegal in your jurisdiction.[/white]",
             border_style="yellow",

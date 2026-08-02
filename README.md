@@ -1,4 +1,4 @@
-# 🔍 Network Port Scanner
+#  Network Port Scanner
 
 > **Advanced multi-technique port scanner built in Python — Cybersecurity Portfolio Project**
 
@@ -148,9 +148,9 @@ Every service in the database is tagged:
 
 | Level | Examples |
 |---|---|
-| 🔴 HIGH | Telnet (23), FTP (21), RDP (3389), SMB (445), MySQL (3306) |
-| 🟡 MEDIUM | SSH (22), HTTP (80), Redis (6379), PostgreSQL (5432) |
-| 🟢 LOW | HTTPS (443), DNS (53), NTP (123) |
+|  HIGH | Telnet (23), FTP (21), RDP (3389), SMB (445), MySQL (3306) |
+|  MEDIUM | SSH (22), HTTP (80), Redis (6379), PostgreSQL (5432) |
+|  LOW | HTTPS (443), DNS (53), NTP (123) |
 
 ---
 
@@ -171,8 +171,8 @@ Timeout    : 1.0s
 Results — 192.168.1.1
   Open: 4  Closed: 71  Filtered: 8  │ 2.31s
 
-⚠ Security Observations
-  ⚠️  3306/MySQL — Database exposed publicly. Bind to localhost or firewall.
+ Security Observations
+    3306/MySQL — Database exposed publicly. Bind to localhost or firewall.
 ```
 
 ---
