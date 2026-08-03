@@ -42,51 +42,6 @@ def _risk_badge(risk: str) -> Text:
 def _category_cell(cat: str) -> str:
     return cat
 
-def _print_security_notes(open_ports: list) -> None:
-    """Print contextual security warnings for high-risk open ports."""
-    notes = []
-    for pr in open_ports:
-        p = pr.port
-        if p == 23:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]23/Telnet[/bold red] — Credentials sent in cleartext. Disable and use SSH.")
-        elif p == 21:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]21/FTP[/bold red] — Credentials sent in cleartext. Prefer SFTP/FTPS.")
-        elif p == 69:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]69/TFTP[/bold red] — No authentication. Disable if not needed.")
-        elif p == 3389:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]3389/RDP[/bold red] — Common brute-force target. Enable NLA, restrict with firewall.")
-        elif p == 445:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]445/SMB[/bold red] — EternalBlue/WannaCry vector. Keep patched; block externally.")
-        elif p in (135, 137, 138, 139):
-            notes.append(f"[bold yellow]WARNING:[/bold yellow] [bold red]{p}/NetBIOS[/bold red] — Windows legacy exposure. Firewall from public networks.")
-        elif p == 1433:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]1433/MSSQL[/bold red] — Database should not face the internet. Restrict to LAN.")
-        elif p == 3306:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]3306/MySQL[/bold red] — Database exposed publicly. Bind to localhost or firewall.")
-        elif p == 5432:
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]5432/PostgreSQL[/bold red] — Database exposed. Restrict to trusted hosts.")
-        elif p in (5900, 5901):
-            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]590x/VNC[/bold red] — Graphical desktop exposed. Tunnel through SSH VPN.")
-        elif p == 6379:
-            notes.append("[bold red]CRITICAL: 6379/Redis[/bold red] — Often no auth by default. Exposed Redis = data breach risk.")
-        elif p == 27017:
-            notes.append("[bold red]CRITICAL: 27017/MongoDB[/bold red] — No-auth MongoDB = critical. Enable authentication NOW.")
-        elif p == 9200:
-            notes.append("[bold red]CRITICAL: 9200/Elasticsearch[/bold red] — Unauthenticated by default. Enable security plugin.")
-        elif p == 4444:
-            notes.append("[bold red]CRITICAL: 4444[/bold red] — Metasploit default port detected. Possible backdoor/C2 shell!")
-
-    if notes:
-        console.print()
-        console.print(
-            Panel(
-                "\n".join(notes),
-                title="[bold red]Security Observations[/bold red]",
-                border_style="red",
-                padding=(0, 2),
-            )
-        )
-    console.print()
 
 # ──────────────────────────────────────────────
 # Public display functions
