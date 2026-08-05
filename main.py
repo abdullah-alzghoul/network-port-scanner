@@ -230,7 +230,7 @@ def main() -> None:
     # ── Save report ──
     if args.output:
         try:
-            reporter = ReportGenerator(result, elapsed, args)
+            reporter = ReportGenerator(result, elapsed)
             reporter.save(args.output)
             ui.print_success(f"Report saved → [bold]{args.output}[/bold]")
         except Exception as exc:

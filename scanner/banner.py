@@ -64,24 +64,23 @@ def grab_banner(host: str, port: int, timeout: float = 2.0) -> Optional[str]:
     use_ssl = port in _SSL_PORTS
 
     try:
-        raw = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        raw.settimeout(timeout)
-        raw.connect((host, port))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as raw:
+            raw.settimeout(timeout)
+            raw.connect((host, port))
 
-        if use_ssl:
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
-            conn = ctx.wrap_socket(raw, server_hostname=host)
-        else:
-            conn = raw
+            if use_ssl:
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                conn = ctx.wrap_socket(raw, server_hostname=host)
+            else:
+                conn = raw
 
-        if probe:
-            conn.sendall(probe)
+            if probe:
+                conn.sendall(probe)
 
-        data = _recv_all(conn, max_bytes=4096)
-        conn.close()
-        return _clean(data.decode("utf-8", errors="replace")) if data else None
+            data = _recv_all(conn, max_bytes=4096)
+            return _clean(data.decode("utf-8", errors="replace")) if data else None
 
     except Exception:
         return None
@@ -90,11 +89,10 @@ def grab_banner(host: str, port: int, timeout: float = 2.0) -> Optional[str]:
 def _generic_grab(host: str, port: int, timeout: float) -> Optional[str]:
     """Attempt a plain TCP grab for ports not in the probe table."""
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(timeout)
-        s.connect((host, port))
-        data = _recv_all(s, max_bytes=2048)
-        s.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(timeout)
+            s.connect((host, port))
+            data = _recv_all(s, max_bytes=2048)
         return _clean(data.decode("utf-8", errors="replace")) if data else None
     except Exception:
         return None

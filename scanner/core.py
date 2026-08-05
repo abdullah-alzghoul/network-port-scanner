@@ -159,14 +159,13 @@ class PortScanner:
 
     # ── TCP connect scan ──
 
-    def _tcp_scan(self, port: int) -> PortResult:
+def _tcp_scan(self, port: int) -> PortResult:
         t0 = time.perf_counter()
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(self.timeout)
-            err = s.connect_ex((self.target, port))
-            ms  = round((time.perf_counter() - t0) * 1000, 2)
-            s.close()
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(self.timeout)
+                err = s.connect_ex((self.target, port))
+                ms  = round((time.perf_counter() - t0) * 1000, 2)
 
             if err == 0:
                 svc    = get_service_info(port)
@@ -184,7 +183,7 @@ class PortScanner:
 
     # ── SYN scan (requires scapy + root) ──
 
-    def _syn_scan(self, port: int) -> PortResult:
+def _syn_scan(self, port: int) -> PortResult:
         try:
             from scapy.all import IP, TCP, sr1, conf  # type: ignore
             conf.verb = 0
@@ -197,7 +196,8 @@ class PortScanner:
 
             if resp.haslayer(TCP):
                 flags = resp[TCP].flags
-                if flags == 0x12:          # SYN-ACK → OPEN
+                if flags & 0x12 == 0x12:   # SYN-ACK → OPEN (mask, not equality — a real
+                                            # host can set other bits too, e.g. ECE for ECN)
                     rst = IP(dst=self.target) / TCP(dport=port, flags="R")
                     sr1(rst, timeout=self.timeout, verbose=0)
                     svc    = get_service_info(port)
@@ -217,7 +217,7 @@ class PortScanner:
 
     # ── UDP scan ──
 
-    def _udp_scan(self, port: int) -> PortResult:
+def _udp_scan(self, port: int) -> PortResult:
         """
         UDP is connectionless; we send an empty datagram and:
         - If we get data back        → OPEN
@@ -225,17 +225,15 @@ class PortScanner:
         - If ICMP port-unreachable   → CLOSED
         """
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.settimeout(self.timeout)
-            s.sendto(b"\x00", (self.target, port))
-            try:
-                s.recvfrom(1024)
-                s.close()
-                return PortResult(port, PortState.OPEN, get_service_info(port))
-            except socket.timeout:
-                s.close()
-                # Cannot distinguish open from filtered without raw sockets
-                return PortResult(port, PortState.OPEN, get_service_info(port))
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(self.timeout)
+                s.sendto(b"\x00", (self.target, port))
+                try:
+                    s.recvfrom(1024)
+                    return PortResult(port, PortState.OPEN, get_service_info(port))
+                except socket.timeout:
+                    # Cannot distinguish open from filtered without raw sockets
+                    return PortResult(port, PortState.OPEN, get_service_info(port))
         except ConnectionRefusedError:
             return PortResult(port, PortState.CLOSED, get_service_info(port))
         except OSError:
