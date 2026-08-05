@@ -117,7 +117,7 @@ def _to_html(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as f:
             f.write(html_out)
 
-    def _build_html_rows(self) -> str:
+def _build_html_rows(self) -> str:
         risk_class = {
             "HIGH": "high", "MEDIUM": "medium",
             "LOW": "low", "UNKNOWN": "unknown",
