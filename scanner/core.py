@@ -159,7 +159,7 @@ class PortScanner:
 
     # ── TCP connect scan ──
 
-def _tcp_scan(self, port: int) -> PortResult:
+    def _tcp_scan(self, port: int) -> PortResult:
         t0 = time.perf_counter()
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -183,7 +183,7 @@ def _tcp_scan(self, port: int) -> PortResult:
 
     # ── SYN scan (requires scapy + root) ──
 
-def _syn_scan(self, port: int) -> PortResult:
+    def _syn_scan(self, port: int) -> PortResult:
         try:
             from scapy.all import IP, TCP, sr1, conf  # type: ignore
             conf.verb = 0
@@ -196,8 +196,7 @@ def _syn_scan(self, port: int) -> PortResult:
 
             if resp.haslayer(TCP):
                 flags = resp[TCP].flags
-                if flags & 0x12 == 0x12:   # SYN-ACK → OPEN (mask, not equality — a real
-                                            # host can set other bits too, e.g. ECE for ECN)
+                if flags & 0x12 == 0x12:   # SYN-ACK → OPEN (mask, not equality)
                     rst = IP(dst=self.target) / TCP(dport=port, flags="R")
                     sr1(rst, timeout=self.timeout, verbose=0)
                     svc    = get_service_info(port)
@@ -217,7 +216,7 @@ def _syn_scan(self, port: int) -> PortResult:
 
     # ── UDP scan ──
 
-def _udp_scan(self, port: int) -> PortResult:
+    def _udp_scan(self, port: int) -> PortResult:
         """
         UDP is connectionless; we send an empty datagram and:
         - If we get data back        → OPEN
