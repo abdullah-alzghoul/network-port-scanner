@@ -211,6 +211,11 @@ class PortScanner:
         except ImportError:
             # scapy not installed → graceful fallback
             return self._tcp_scan(port)
+        except PermissionError:
+            # Raw sockets need root/admin. Without it every port would
+            # silently come back FILTERED — indistinguishable from a real
+            # firewall. Fall back to TCP instead of returning a misleading result.
+            return self._tcp_scan(port)
         except Exception:
             return PortResult(port, PortState.FILTERED, get_service_info(port))
 
