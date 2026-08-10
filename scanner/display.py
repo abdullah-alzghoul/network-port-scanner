@@ -98,64 +98,44 @@ def print_scan_config(
 
 def print_open_port_live(pr) -> None:
     """Print a single open port as it is discovered (live feedback)."""
-    svc      = pr.service
-    risk     = svc.get("risk", "UNKNOWN")
-    color    = RISK_COLOR.get(risk, "white")
-    svc_name = svc.get("name", "?")
-    console.print(
-        f"  [bold green]OPEN[/bold green]  "
-        f"[bold white]{pr.port:5d}[/bold white]  "
-        f"[cyan]{svc_name:<14}[/cyan]  "
-        f"[{color}]{risk}[/{color}]"
-        + (f"  [dim]{pr.response_ms}ms[/dim]" if pr.response_ms else "")
-    )
+    console.print(f"  [green]✓[/green] Port [bold]{pr.port}[/bold] open")
 
 
 def print_results(result, elapsed: float) -> None:
-    """Render the final results table and security observations."""
     open_ports = result.open_ports
+    total      = result.total_ports
 
-    # ── Summary ──
-    summary = (
-        f"[bold green]✓ Open:[/bold green] {len(open_ports)}  "
-        f"[red]✗ Closed:[/red] {result.closed_count}  "
-        f"[yellow]⟳ Filtered:[/yellow] {result.filtered_count}  "
-        f"[dim]│  {elapsed:.2f}s  │  {result.total_ports:,} ports scanned[/dim]"
-    )
-    console.print()
     console.print(
         Panel(
-            summary,
+            f"[bold green]✓[/bold green] Open: {len(open_ports)}  "
+            f"[bold red]✗[/bold red] Closed: {result.closed_count}  "
+            f"[yellow]⟳[/yellow] Filtered: {result.filtered_count}  │  "
+            f"{elapsed:.2f}s  │  {total} ports scanned",
             title=f"[bold]Results — {result.target}[/bold]",
-            border_style="green",
+            border_style="green" if open_ports else "yellow",
         )
     )
-    console.print()
 
     if not open_ports:
-        console.print("[yellow]  No open ports found.[/yellow]\n")
         return
 
-    # ── Table ──
     table = Table(
-        title        = f"Open Ports on [bold]{result.target}[/bold]",
-        box          = box.ROUNDED,
-        border_style = "green",
-        show_lines   = True,
-        header_style = "bold cyan",
-        expand       = False,
+        title=f"Open Ports on {result.target}",
+        box=box.ROUNDED,
+        show_lines=True,
+        header_style="bold blue",
     )
-    table.add_column("Port",        justify="right",  width=7)
-    table.add_column("Protocol",    width=5)
-    table.add_column("Service",     width=13)
-    table.add_column("Category",    width=18)
-    table.add_column("Risk",        justify="center", width=8)
-    table.add_column("RTT",         justify="right",  width=8)
-    table.add_column("Description / Banner", width=42)
+    table.add_column("Port", justify="right", style="bold")
+    table.add_column("Proto")
+    table.add_column("Service")
+    table.add_column("Category")
+    table.add_column("Risk", justify="center")
+    table.add_column("RTT", justify="right")
+    table.add_column("Description / Banner")
 
     for pr in open_ports:
         svc    = pr.service
-        risk   = svc.get("risk", "UNKNOWN")
+        risk   = svc.get("risk", "LOW")
         cat    = svc.get("category", "Unknown")
         proto  = "UDP" if result.scan_type == "udp" else "TCP"
         desc   = pr.banner or svc.get("description", "")
@@ -182,40 +162,40 @@ def _print_security_notes(open_ports: list) -> None:
     for pr in open_ports:
         p = pr.port
         if p == 23:
-            notes.append("⚠️  [bold red]23/Telnet[/bold red] — Credentials sent in cleartext. Disable and use SSH.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]23/Telnet[/bold red] — Credentials sent in cleartext. Disable and use SSH.")
         elif p == 21:
-            notes.append("⚠️  [bold red]21/FTP[/bold red]    — Credentials sent in cleartext. Prefer SFTP/FTPS.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]21/FTP[/bold red] — Credentials sent in cleartext. Prefer SFTP/FTPS.")
         elif p == 69:
-            notes.append("⚠️  [bold red]69/TFTP[/bold red]   — No authentication. Disable if not needed.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]69/TFTP[/bold red] — No authentication. Disable if not needed.")
         elif p == 3389:
-            notes.append("⚠️  [bold red]3389/RDP[/bold red]  — Common brute-force target. Enable NLA, restrict with firewall.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]3389/RDP[/bold red] — Common brute-force target. Enable NLA, restrict with firewall.")
         elif p == 445:
-            notes.append("⚠️  [bold red]445/SMB[/bold red]   — EternalBlue/WannaCry vector. Keep patched; block externally.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]445/SMB[/bold red] — EternalBlue/WannaCry vector. Keep patched; block externally.")
         elif p in (135, 137, 138, 139):
-            notes.append(f"⚠️  [bold red]{p}/NetBIOS[/bold red] — Windows legacy exposure. Firewall from public networks.")
+            notes.append(f"[bold yellow]WARNING:[/bold yellow] [bold red]{p}/NetBIOS[/bold red] — Windows legacy exposure. Firewall from public networks.")
         elif p == 1433:
-            notes.append("⚠️  [bold red]1433/MSSQL[/bold red]— Database should not face the internet. Restrict to LAN.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]1433/MSSQL[/bold red] — Database should not face the internet. Restrict to LAN.")
         elif p == 3306:
-            notes.append("⚠️  [bold red]3306/MySQL[/bold red]— Database exposed publicly. Bind to localhost or firewall.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]3306/MySQL[/bold red] — Database exposed publicly. Bind to localhost or firewall.")
         elif p == 5432:
-            notes.append("⚠️  [bold red]5432/PostgreSQL[/bold red] — Database exposed. Restrict to trusted hosts.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]5432/PostgreSQL[/bold red] — Database exposed. Restrict to trusted hosts.")
         elif p in (5900, 5901):
-            notes.append("⚠️  [bold red]590x/VNC[/bold red]  — Graphical desktop exposed. Tunnel through SSH VPN.")
+            notes.append("[bold yellow]WARNING:[/bold yellow] [bold red]590x/VNC[/bold red] — Graphical desktop exposed. Tunnel through SSH VPN.")
         elif p == 6379:
-            notes.append("🚨 [bold red]6379/Redis[/bold red] — Often no auth by default. Exposed Redis = data breach risk.")
+            notes.append("[bold red]CRITICAL: 6379/Redis[/bold red] — Often no auth by default. Exposed Redis = data breach risk.")
         elif p == 27017:
-            notes.append("🚨 [bold red]27017/MongoDB[/bold red] — No-auth MongoDB = critical. Enable authentication NOW.")
+            notes.append("[bold red]CRITICAL: 27017/MongoDB[/bold red] — No-auth MongoDB = critical. Enable authentication NOW.")
         elif p == 9200:
-            notes.append("🚨 [bold red]9200/Elasticsearch[/bold red] — Unauthenticated by default. Enable security plugin.")
+            notes.append("[bold red]CRITICAL: 9200/Elasticsearch[/bold red] — Unauthenticated by default. Enable security plugin.")
         elif p == 4444:
-            notes.append("🚨 [bold red]4444[/bold red] — Metasploit default port detected. Possible backdoor/C2 shell!")
+            notes.append("[bold red]CRITICAL: 4444[/bold red] — Metasploit default port detected. Possible backdoor/C2 shell!")
 
     if notes:
         console.print()
         console.print(
             Panel(
                 "\n".join(notes),
-                title="[bold red]🔒  Security Observations[/bold red]",
+                title="[bold red]Security Observations[/bold red]",
                 border_style="red",
                 padding=(0, 2),
             )
