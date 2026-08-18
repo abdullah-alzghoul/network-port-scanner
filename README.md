@@ -37,38 +37,41 @@ pip install scapy
 
 ## Usage
 
+```text
 python main.py -t <TARGET> [options]
-
+```
 
 ### Options
 
+```text
 Target:
--t, --target IP/HOST Target IP address or hostname (required)
+  -t, --target IP/HOST   Target IP address or hostname  (required)
 
 Port specification:
--p, --ports SPEC
-common 72 well-known ports (default)
-all full 1–65535 sweep
-top100 first 100 common ports
-1-1024 numeric range
-22,80,443,3306 comma-separated list
-1-200,443,8080 mixed syntax
+  -p, --ports SPEC
+    common               72 well-known ports (default)
+    all                  full 1–65535 sweep
+    top100               first 100 common ports
+    1-1024               numeric range
+    22,80,443,3306       comma-separated list
+    1-200,443,8080       mixed syntax
 
 Scan type:
--s, --scan-type tcp (default) | syn (root) | udp
+  -s, --scan-type        tcp (default) | syn (root) | udp
 
 Performance:
---threads N Concurrent workers (default: 150)
---timeout SEC Per-port timeout in seconds (default: 1.0)
+  --threads N            Concurrent workers (default: 150)
+  --timeout SEC          Per-port timeout in seconds (default: 1.0)
 
 Features:
---banner Grab service banners from open ports
---no-ping Skip host-alive check
+  --banner               Grab service banners from open ports
+  --no-ping              Skip host-alive check
 
 Output:
--o, --output FILE Save report (.json / .html / .txt)
--v, --verbose Print each open port as discovered
--q, --quiet Minimal output
+  -o, --output FILE      Save report (.json / .html / .txt)
+  -v, --verbose          Print each open port as discovered
+  -q, --quiet            Minimal output
+```
 
 ---
 
@@ -97,23 +100,26 @@ python main.py -t 192.168.1.1 -p common -o scan_result.json
 ---
 
 ## Project Structure
+
+```text
 network-port-scanner/
-├── main.py ← CLI entry point (argparse + Rich progress)
-├── requirements.txt ← runtime dependency (rich)
-├── requirements-dev.txt ← test dependencies (pytest, pytest-cov)
+├── main.py                    ← CLI entry point (argparse + Rich progress)
+├── requirements.txt           ← runtime dependency (rich)
+├── requirements-dev.txt       ← test dependencies (pytest, pytest-cov)
 ├── pytest.ini
-├── LICENSE ← MIT
+├── LICENSE                    ← MIT
 ├── README.md
-├── .github/workflows/ ← CI: dependency audit + test suite on every push
+├── .github/workflows/         ← CI: dependency audit + test suite on every push
 ├── scanner/
-│ ├── init.py ← Package exports
-│ ├── core.py ← PortScanner engine (TCP / SYN / UDP)
-│ ├── services.py ← Port-to-service database + risk levels
-│ ├── banner.py ← Protocol-aware banner grabbing
-│ ├── display.py ← Rich terminal UI (tables, panels, live feedback)
-│ ├── utils.py ← Target resolution, port parsing, host discovery
-│ └── report.py ← JSON / HTML / TXT report generation
-└── tests/ ← 92 tests, 89% coverage (see Running Tests below)
+│   ├── __init__.py            ← Package exports
+│   ├── core.py                ← PortScanner engine (TCP / SYN / UDP)
+│   ├── services.py            ← Port-to-service database + risk levels
+│   ├── banner.py               ← Protocol-aware banner grabbing
+│   ├── display.py             ← Rich terminal UI (tables, panels, live feedback)
+│   ├── utils.py                ← Target resolution, port parsing, host discovery
+│   └── report.py              ← JSON / HTML / TXT report generation
+└── tests/                     ← 92 tests, 89% coverage (see Running Tests below)
+```
 
 ---
 
@@ -168,34 +174,37 @@ Every service in the database is tagged:
 ## Output Example
 
 Genuine output from a real scan (local test servers, so the example is reproducible):
+
+```text
 ╭─────────────────────────────── Scan Configuration ───────────────────────────────╮
 │                                                                                  │
-│ Target IP 127.0.0.1                                                              │
-│ Ports 5 ports                                                                    │
-│ Scan type TCP                                                                    │
-│ Threads 150                                                                      │
-│ Timeout 1.0s                                                                     │
-│ Banners yes                                                                      │
+│   Target IP   127.0.0.1                                                          │
+│   Ports       5 ports                                                            │
+│   Scan type   TCP                                                                │
+│   Threads     150                                                                │
+│   Timeout     1.0s                                                               │
+│   Banners     yes                                                                │
 │                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────╯
 
 ╭────────────────────────────── Results — 127.0.0.1 ───────────────────────────────╮
-│ ✓ Open: 3 ✗ Closed: 2 ⟳ Filtered: 0 │ 0.87s │ 5 ports scanned                   │
+│ ✓ Open: 3  ✗ Closed: 2  ⟳ Filtered: 0  │  0.87s  │  5 ports scanned             │
 ╰──────────────────────────────────────────────────────────────────────────────────╯
-Open Ports on 127.0.0.1
+                              Open Ports on 127.0.0.1
 ╭──────┬───────┬─────────┬───────────────┬────────┬────────┬───────────────────────╮
-│ Port │ Proto │ Service │ Category │ Risk │ RTT │ Description / Banner            │
+│ Port │ Proto │ Service │ Category      │  Risk  │    RTT │ Description / Banner  │
 ├──────┼───────┼─────────┼───────────────┼────────┼────────┼───────────────────────┤
-│ 22 │ TCP │ SSH │ Remote Access │ MEDIUM │ 2.06ms │ SSH-2.0-OpenSSH_9.6           │
+│   22 │ TCP   │ SSH     │ Remote Access │ MEDIUM │ 2.06ms │ SSH-2.0-OpenSSH_9.6   │
 ├──────┼───────┼─────────┼───────────────┼────────┼────────┼───────────────────────┤
-│ 80 │ TCP │ HTTP │ Web │ MEDIUM │ 0.2ms │ HTTP/1.1 200 OK | ...                   │
+│   80 │ TCP   │ HTTP    │ Web           │ MEDIUM │  0.2ms │ HTTP/1.1 200 OK | ... │
 ├──────┼───────┼─────────┼───────────────┼────────┼────────┼───────────────────────┤
-│ 3306 │ TCP │ MySQL │ Database │ HIGH │ 0.88ms │ 5.7.44-MySQL ...                 │
+│ 3306 │ TCP   │ MySQL   │ Database      │  HIGH  │ 0.88ms │ 5.7.44-MySQL ...      │
 ╰──────┴───────┴─────────┴───────────────┴────────┴────────┴───────────────────────╯
 
 ╭──────────────────────────── Security Observations ───────────────────────────────╮
-│ WARNING: 3306/MySQL — Database exposed publicly. Bind to localhost or firewall.  │
+│  WARNING: 3306/MySQL — Database exposed publicly. Bind to localhost or firewall. │
 ╰──────────────────────────────────────────────────────────────────────────────────╯
+```
 
 ---
 
