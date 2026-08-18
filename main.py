@@ -32,6 +32,7 @@ from rich.progress import (
 from scanner.core    import PortScanner, PortState
 from scanner.report  import ReportGenerator
 from scanner.utils   import resolve_target, parse_port_range, check_host_alive
+from scanner         import __version__
 import scanner.display as ui
 
 console = Console(width=130)
@@ -69,6 +70,12 @@ def build_parser() -> argparse.ArgumentParser:
         "-t", "--target", required=True,
         metavar="IP/HOST",
         help="Target IP address or hostname",
+    )
+
+    # ── Meta ──
+    parser.add_argument(
+        "--version", action="version",
+        version=f"portscanner {__version__}",
     )
 
     # ── Ports ──

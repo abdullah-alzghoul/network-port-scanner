@@ -20,7 +20,14 @@ def resolve_target(target: str) -> Optional[Tuple[str, str]]:
     Returns ``None`` when resolution fails.
     """
     try:
-        ipaddress.ip_address(target)          # already an IP?
+        ip_obj = ipaddress.ip_address(target)     # already an IP?
+        if isinstance(ip_obj, ipaddress.IPv6Address):
+            # Every socket call downstream is AF_INET-only — an IPv6
+            # literal would previously "resolve" successfully here and
+            # then fail confusingly later. Fail honestly at this point
+            # instead, with the same signature as any other unresolvable
+            # target.
+            return None
         try:
             hostname = socket.gethostbyaddr(target)[0]
         except socket.herror:

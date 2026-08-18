@@ -120,6 +120,13 @@ def test_resolve_target_ip_with_no_reverse_dns_falls_back_to_ip_itself():
     assert target == "198.51.100.7"
     assert hostname == "198.51.100.7"
 
+def test_resolve_target_rejects_ipv6():
+    # Stage 8: every downstream socket call is AF_INET-only, so an IPv6
+    # literal used to "resolve" successfully here and then fail
+    # confusingly deep in the scan. Should fail cleanly at this point
+    # instead, same as any other unresolvable target.
+    assert resolve_target("::1") is None
+    assert resolve_target("2001:db8::1") is None
 
 # ── check_host_alive: mock subprocess so results are deterministic
 # regardless of what's actually reachable from wherever tests run ──
