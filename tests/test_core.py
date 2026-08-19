@@ -13,6 +13,7 @@ import socket
 import sys
 import threading
 import time
+import concurrent.futures
 
 import pytest
 
@@ -192,6 +193,45 @@ def test_dispatch_routes_syn_to_syn_scan():
     scanner._syn_scan = lambda port: called.setdefault("syn", port) or PortResult(port, PortState.OPEN, {})
     scanner._dispatch(80)
     assert called.get("syn") == 80
+
+# ── KeyboardInterrupt handling in scan() ──
+
+def test_scan_shuts_down_executor_without_waiting_on_keyboard_interrupt(monkeypatch):
+    # Regression test for the Stage 8 Ctrl+C fix — done at the unit level
+    # rather than via a real OS signal to a subprocess: sending SIGINT
+    # through subprocess.Popen isn't portable (Windows doesn't support
+    # plain SIGINT the way POSIX does, only CTRL_C_EVENT with extra
+    # process-group setup), so this drives the same code path directly
+    # instead of depending on platform-specific signal delivery.
+    scanner = PortScanner("127.0.0.1", [1, 2, 3], scan_type="tcp", threads=3, timeout=1.0)
+
+    shutdown_calls = []
+    real_executor_cls = concurrent.futures.ThreadPoolExecutor
+
+    class TrackedExecutor(real_executor_cls):
+        def shutdown(self, wait=True, *, cancel_futures=False):
+            shutdown_calls.append({"wait": wait, "cancel_futures": cancel_futures})
+            return super().shutdown(wait=wait, cancel_futures=cancel_futures)
+
+    def fake_dispatch(port):
+        if port == 2:
+            raise KeyboardInterrupt()
+        return PortResult(port, PortState.CLOSED, {})
+
+    monkeypatch.setattr(concurrent.futures, "ThreadPoolExecutor", TrackedExecutor)
+    scanner._dispatch = fake_dispatch
+
+    with pytest.raises(KeyboardInterrupt):
+        scanner.scan()
+
+    # The explicit shutdown in the except block is what matters — it must
+    # have fired with cancel_futures=True. (A second, default shutdown()
+    # call also happens afterward, from the `with` statement's own
+    # __exit__ once the exception propagates — that one is harmless: by
+    # then everything not yet started has already been cancelled, so it
+    # only waits on whatever was already in flight, which is exactly the
+    # bounded wait the fix is meant to produce.)
+    assert {"wait": False, "cancel_futures": True} in shutdown_calls
 
 
 def test_unrecognized_scan_type_defaults_to_tcp(closed_tcp_port):

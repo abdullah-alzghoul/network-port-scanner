@@ -122,25 +122,32 @@ class PortScanner:
                 executor.submit(self._dispatch, port): port
                 for port in self.ports
             }
-            for future in concurrent.futures.as_completed(futures):
-                pr: PortResult = future.result()
+            try:
+                for future in concurrent.futures.as_completed(futures):
+                    pr: PortResult = future.result()
 
-                with self._lock:
-                    self._done += 1
-                    done_snap = self._done
+                    with self._lock:
+                        self._done += 1
+                        done_snap = self._done
 
-                if pr.state == PortState.OPEN:
-                    open_ports.append(pr)
-                elif pr.state == PortState.CLOSED:
-                    closed_count += 1
-                else:
-                    filtered_count += 1
+                    if pr.state == PortState.OPEN:
+                        open_ports.append(pr)
+                    elif pr.state == PortState.CLOSED:
+                        closed_count += 1
+                    else:
+                        filtered_count += 1
 
-                if progress_callback:
-                    try:
-                        progress_callback(done_snap, len(self.ports), pr)
-                    except Exception:
-                        pass
+                    if progress_callback:
+                        try:
+                            progress_callback(done_snap, len(self.ports), pr)
+                        except Exception:
+                            pass
+            except KeyboardInterrupt:
+                # Drop every port that hasn't started yet so shutdown doesn't
+                # block on the full remaining queue — only what's already in
+                # flight (bounded by `timeout`) still has to finish.
+                executor.shutdown(wait=False, cancel_futures=True)
+                raise
 
         result.scan_time      = time.perf_counter() - start
         result.open_ports     = sorted(open_ports, key=lambda x: x.port)

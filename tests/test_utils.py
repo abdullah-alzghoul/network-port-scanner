@@ -133,30 +133,33 @@ def test_resolve_target_rejects_ipv6():
 
 def test_check_host_alive_true_when_ping_succeeds():
     fake_result = MagicMock(returncode=0)
-    with patch("subprocess.run", return_value=fake_result):
-        assert check_host_alive("127.0.0.1", timeout=1.0) is True
+    with patch("platform.system", return_value="Linux"):
+        with patch("subprocess.run", return_value=fake_result):
+            assert check_host_alive("127.0.0.1", timeout=1.0) is True
 
 
 def test_check_host_alive_falls_back_to_tcp_when_ping_fails():
     fake_ping_result = MagicMock(returncode=1)
     fake_socket = MagicMock()
     fake_socket.connect_ex.return_value = 0  # TCP connect succeeds
-    with patch("subprocess.run", return_value=fake_ping_result):
-        with patch("socket.socket") as mock_socket_cls:
-            mock_socket_cls.return_value.__enter__ = MagicMock(return_value=fake_socket)
-            mock_socket_cls.return_value.__exit__ = MagicMock(return_value=False)
-            mock_socket_cls.return_value.connect_ex = fake_socket.connect_ex
-            result = check_host_alive("127.0.0.1", timeout=1.0)
+    with patch("platform.system", return_value="Linux"):
+        with patch("subprocess.run", return_value=fake_ping_result):
+            with patch("socket.socket") as mock_socket_cls:
+                mock_socket_cls.return_value.__enter__ = MagicMock(return_value=fake_socket)
+                mock_socket_cls.return_value.__exit__ = MagicMock(return_value=False)
+                mock_socket_cls.return_value.connect_ex = fake_socket.connect_ex
+                result = check_host_alive("127.0.0.1", timeout=1.0)
     assert result is True
 
 
 def test_check_host_alive_false_when_ping_and_tcp_both_fail():
     fake_ping_result = MagicMock(returncode=1)
-    with patch("subprocess.run", return_value=fake_ping_result):
-        with patch("socket.socket") as mock_socket_cls:
-            mock_socket_cls.return_value.__enter__.return_value.connect_ex.return_value = 111
-            mock_socket_cls.return_value.__exit__.return_value = False
-            result = check_host_alive("203.0.113.1", timeout=0.5)  # TEST-NET-3, never routable
+    with patch("platform.system", return_value="Linux"):
+        with patch("subprocess.run", return_value=fake_ping_result):
+            with patch("socket.socket") as mock_socket_cls:
+                mock_socket_cls.return_value.__enter__.return_value.connect_ex.return_value = 111
+                mock_socket_cls.return_value.__exit__.return_value = False
+                result = check_host_alive("203.0.113.1", timeout=0.5)  # TEST-NET-3, never routable
     assert result is False
 
 
@@ -165,18 +168,20 @@ def test_check_host_alive_survives_socket_errors_during_tcp_fallback():
     # nonzero), the function must still return False, not propagate the
     # exception and take the whole liveness check down with it.
     fake_ping_result = MagicMock(returncode=1)
-    with patch("subprocess.run", return_value=fake_ping_result):
-        with patch("socket.socket", side_effect=OSError("network unreachable")):
-            result = check_host_alive("203.0.113.1", timeout=0.5)
+    with patch("platform.system", return_value="Linux"):
+        with patch("subprocess.run", return_value=fake_ping_result):
+            with patch("socket.socket", side_effect=OSError("network unreachable")):
+                result = check_host_alive("203.0.113.1", timeout=0.5)
     assert result is False
 
 
 def test_check_host_alive_handles_subprocess_timeout_gracefully():
-    with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="ping", timeout=1)):
-        with patch("socket.socket") as mock_socket_cls:
-            mock_socket_cls.return_value.__enter__.return_value.connect_ex.return_value = 111
-            mock_socket_cls.return_value.__exit__.return_value = False
-            # Must not raise — a hung/timed-out ping should fall through
-            # to the TCP fallback, not crash the whole scan.
-            result = check_host_alive("203.0.113.1", timeout=0.5)
+    with patch("platform.system", return_value="Linux"):
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="ping", timeout=1)):
+            with patch("socket.socket") as mock_socket_cls:
+                mock_socket_cls.return_value.__enter__.return_value.connect_ex.return_value = 111
+                mock_socket_cls.return_value.__exit__.return_value = False
+                # Must not raise — a hung/timed-out ping should fall through
+                # to the TCP fallback, not crash the whole scan.
+                result = check_host_alive("203.0.113.1", timeout=0.5)
     assert result is False
