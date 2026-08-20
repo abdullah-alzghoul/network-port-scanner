@@ -16,7 +16,7 @@
 | **Security Notes** | Contextual warnings for dangerous open ports |
 | **Report Formats** | JSON · HTML (dark-themed) · TXT |
 | **Performance** | Multi-threaded (up to 1 000 workers) |
-| **Tested** | 92 automated tests, 89% coverage, CI-enforced on every push |
+| **Tested** | 96 automated tests, 89% coverage, CI-enforced on every push |
 
 ---
 
@@ -46,6 +46,9 @@ python main.py -t <TARGET> [options]
 ```text
 Target:
   -t, --target IP/HOST   Target IP address or hostname  (required)
+
+Meta:
+  --version               Print version and exit
 
 Port specification:
   -p, --ports SPEC
@@ -118,7 +121,7 @@ network-port-scanner/
 │   ├── display.py             ← Rich terminal UI (tables, panels, live feedback)
 │   ├── utils.py                ← Target resolution, port parsing, host discovery
 │   └── report.py              ← JSON / HTML / TXT report generation
-└── tests/                     ← 92 tests, 89% coverage (see Running Tests below)
+└── tests/                     ← 96 tests, 89% coverage (see Running Tests below)
 ```
 
 ---
@@ -231,7 +234,7 @@ Genuine output from a real scan (local test servers, so the example is reproduci
 - Multiple output formats (JSON, HTML, TXT)
 - Raw packet crafting with `scapy` (SYN scan)
 - Defensive coding and error handling
-- Automated testing with `pytest` (92 tests, real sockets over mocks where it matters)
+- Automated testing with `pytest` (96 tests, real sockets over mocks where it matters)
 - CI/CD with GitHub Actions (dependency auditing + test suite on every push)
 
 ---
