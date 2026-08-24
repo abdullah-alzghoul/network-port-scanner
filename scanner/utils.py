@@ -42,6 +42,91 @@ def resolve_target(target: str) -> Optional[Tuple[str, str]]:
             return None
 
 
+
+def parse_targets(spec: str, max_targets: int = 1024) -> List[str]:
+    """
+    Expand a target specification into a list of individual target
+    strings (IPs or hostnames) — same spirit as parse_port_range().
+
+    Supports, comma-separated and freely mixed:
+      - A single IP or hostname          192.168.1.1 / example.com
+      - CIDR notation                    192.168.1.0/28
+      - A full IP-to-IP range            192.168.1.1-192.168.1.10
+      - A short last-octet range         192.168.1.1-10
+
+    Hostnames are passed through unexpanded — DNS resolution happens
+    later, per-target, in resolve_target(). Only numeric IP/CIDR/range
+    syntax is expanded here. A reversed range (end before start) is
+    silently empty, the same precedent parse_port_range already sets
+    for a reversed port range.
+
+    Raises ValueError if a single piece — or the specification as a
+    whole — would expand past max_targets, so a typo like a /8 can't
+    silently attempt to queue sixteen million hosts.
+    """
+    targets: List[str] = []
+
+    for piece in spec.split(","):
+        piece = piece.strip()
+        if not piece:
+            continue
+
+        # CIDR notation
+        if "/" in piece:
+            try:
+                network = ipaddress.ip_network(piece, strict=False)
+            except ValueError:
+                network = None
+            if network is not None:
+                if network.num_addresses > max_targets:
+                    raise ValueError(
+                        f"'{piece}' expands to {network.num_addresses} addresses, "
+                        f"over the {max_targets}-host limit — use a smaller range."
+                    )
+                targets.extend(str(ip) for ip in network.hosts())
+                if len(targets) > max_targets:
+                    raise ValueError(f"Target list exceeds {max_targets} hosts.")
+                continue
+
+        # IP range: "a.b.c.d-w.x.y.z" (full) or "a.b.c.d-z" (short last octet)
+        if "-" in piece:
+            left, _, right = piece.partition("-")
+            left, right = left.strip(), right.strip()
+            start_ip = end_ip = None
+            try:
+                start_ip = ipaddress.ip_address(left)
+                if "." in right:
+                    end_ip = ipaddress.ip_address(right)
+                else:
+                    octets = left.split(".")
+                    octets[-1] = right
+                    end_ip = ipaddress.ip_address(".".join(octets))
+            except ValueError:
+                start_ip = end_ip = None
+            if start_ip is not None and end_ip is not None:
+                span = int(end_ip) - int(start_ip)
+                if span < 0:
+                    continue  # reversed range — silently empty
+                if span + 1 > max_targets:
+                    raise ValueError(
+                        f"'{piece}' expands to {span + 1} addresses, over the "
+                        f"{max_targets}-host limit — use a smaller range."
+                    )
+                targets.extend(
+                    str(ipaddress.ip_address(i))
+                    for i in range(int(start_ip), int(end_ip) + 1)
+                )
+                if len(targets) > max_targets:
+                    raise ValueError(f"Target list exceeds {max_targets} hosts.")
+                continue
+
+        # Single IP or hostname, passed through as-is
+        targets.append(piece)
+        if len(targets) > max_targets:
+            raise ValueError(f"Target list exceeds {max_targets} hosts.")
+
+    return list(dict.fromkeys(targets))  # dedupe, preserve first-seen order
+
 # ──────────────────────────────────────────────
 # Host liveness check
 # ──────────────────────────────────────────────

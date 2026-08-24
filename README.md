@@ -9,6 +9,7 @@
 | Category | What it does |
 |---|---|
 | **Scan Techniques** | TCP Connect · SYN Half-Open (scapy) · UDP |
+| **Multi-Target** | Single host, comma list, CIDR, or IP range — one invocation |
 | **Service Detection** | 72 well-known ports with name, category & risk level |
 | **Banner Grabbing** | Protocol-aware probes (HTTP, SSH, FTP, SMTP, Redis…) |
 | **Live Feedback** | Real-time progress bar + instant open-port reporting |
@@ -16,7 +17,7 @@
 | **Security Notes** | Contextual warnings for dangerous open ports |
 | **Report Formats** | JSON · HTML (dark-themed) · TXT |
 | **Performance** | Multi-threaded (up to 1 000 workers) |
-| **Tested** | 96 automated tests, 89% coverage, CI-enforced on every push |
+| **Tested** | 111 automated tests, 89% coverage, CI-enforced on every push |
 
 ---
 
@@ -45,7 +46,8 @@ python main.py -t <TARGET> [options]
 
 ```text
 Target:
-  -t, --target IP/HOST   Target IP address or hostname  (required)
+-t, --target SPEC Target(s): single IP/host, comma list, CIDR, or IP range (required)
+  e.g. 10.0.0.1 | 10.0.0.1,10.0.0.2 | 10.0.0.0/28 | 10.0.0.1-20
 
 Meta:
   --version               Print version and exit
@@ -98,6 +100,12 @@ python main.py -t 192.168.1.1 -p 53,67,68,123,161 -s udp
 
 # Save JSON report
 python main.py -t 192.168.1.1 -p common -o scan_result.json
+
+# Multi-target: whole /28 subnet, one report per host
+python main.py -t 192.168.1.0/28 -p common -o report.html
+
+# Multi-target: explicit list
+python main.py -t 192.168.1.10,192.168.1.20,192.168.1.30 -p 22,80,443
 ```
 
 ---

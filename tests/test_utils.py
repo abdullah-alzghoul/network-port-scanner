@@ -5,7 +5,7 @@ import socket
 import subprocess
 from unittest.mock import patch, MagicMock
 
-from scanner.utils import resolve_target, parse_port_range, check_host_alive
+from scanner.utils import resolve_target, parse_port_range, parse_targets, check_host_alive
 from scanner.services import COMMON_PORTS
 
 
@@ -85,6 +85,84 @@ def test_malformed_range_token_is_ignored_not_raised():
     # raise and abort the whole spec.
     result = parse_port_range("abc-100,443")
     assert result == [443]
+
+
+# ── parse_targets ──
+
+def test_parse_targets_single_ip():
+    assert parse_targets("192.168.1.1") == ["192.168.1.1"]
+
+
+def test_parse_targets_single_hostname_passed_through():
+    assert parse_targets("example.com") == ["example.com"]
+
+
+def test_parse_targets_comma_list_mixed_ip_and_hostname():
+    result = parse_targets("192.168.1.1,example.com,10.0.0.5")
+    assert result == ["192.168.1.1", "example.com", "10.0.0.5"]
+
+
+def test_parse_targets_cidr_expands_to_usable_hosts():
+    # /29 = 8 addresses, minus network + broadcast = 6 usable hosts
+    result = parse_targets("192.168.1.0/29")
+    assert result == [
+        "192.168.1.1", "192.168.1.2", "192.168.1.3",
+        "192.168.1.4", "192.168.1.5", "192.168.1.6",
+    ]
+
+
+def test_parse_targets_full_ip_range():
+    result = parse_targets("192.168.1.1-192.168.1.5")
+    assert result == ["192.168.1.1", "192.168.1.2", "192.168.1.3",
+                       "192.168.1.4", "192.168.1.5"]
+
+
+def test_parse_targets_short_last_octet_range_matches_full_form():
+    short = parse_targets("192.168.1.1-5")
+    full  = parse_targets("192.168.1.1-192.168.1.5")
+    assert short == full
+
+
+def test_parse_targets_reversed_range_is_silently_empty():
+    # Same precedent as parse_port_range's reversed-range behavior.
+    assert parse_targets("192.168.1.10-1") == []
+
+
+def test_parse_targets_dedupes_while_preserving_order():
+    result = parse_targets("192.168.1.1,192.168.1.2,192.168.1.1")
+    assert result == ["192.168.1.1", "192.168.1.2"]
+
+
+def test_parse_targets_mixed_cidr_and_single_hosts():
+    result = parse_targets("192.168.1.0/30,example.com")
+    assert result == ["192.168.1.1", "192.168.1.2", "example.com"]
+
+
+def test_parse_targets_oversized_cidr_raises_instead_of_hanging():
+    # A /8 is 16 million+ addresses — must fail fast and clearly, not
+    # silently try to build a list that size.
+    with pytest.raises(ValueError, match="over the .* limit"):
+        parse_targets("10.0.0.0/8")
+
+
+def test_parse_targets_oversized_range_raises():
+    with pytest.raises(ValueError, match="over the .* limit"):
+        parse_targets("10.0.0.1-10.1.0.1")
+
+
+def test_parse_targets_respects_custom_max_targets():
+    # A /28 is 16 addresses, 14 usable — fine at the default cap, but
+    # should still be rejected against a smaller explicit cap.
+    parse_targets("192.168.1.0/28")  # should not raise at the default
+    with pytest.raises(ValueError, match="over the .* limit"):
+        parse_targets("192.168.1.0/28", max_targets=10)
+
+
+def test_parse_targets_malformed_piece_falls_back_to_literal():
+    # Something that looks range-ish but isn't a valid IP on either side
+    # should be treated as a literal target string, not raise.
+    result = parse_targets("not-an-ip-1.2.3.999")
+    assert result == ["not-an-ip-1.2.3.999"]
 
 
 # ── resolve_target: needs real DNS/socket, no mocking (these are cheap

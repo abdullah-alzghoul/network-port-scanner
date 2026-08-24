@@ -1,0 +1,14 @@
+{
+  "scan_info": {
+    "target": "127.0.0.1",
+    "hostname": "awu-shopping.local",
+    "scan_type": "tcp",
+    "timestamp": "2026-08-24T17:09:03",
+    "duration_seconds": 1.005,
+    "total_ports_scanned": 1,
+    "open_count": 0,
+    "closed_count": 1,
+    "filtered_count": 0
+  },
+  "open_ports": []
+}
