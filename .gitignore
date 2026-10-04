@@ -11,5 +11,6 @@ venv/
 
 # Generated scan reports (test output, not source code)
 report.*
+/test.json
 .coverage
 .pytest_cache/

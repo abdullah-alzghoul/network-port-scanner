@@ -5,6 +5,8 @@ import socket
 import subprocess
 from unittest.mock import patch, MagicMock
 
+import pytest
+
 from scanner.utils import resolve_target, parse_port_range, parse_targets, check_host_alive
 from scanner.services import COMMON_PORTS
 

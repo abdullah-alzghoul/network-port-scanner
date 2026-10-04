@@ -26,7 +26,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 def test_version_flag_prints_version_and_exits_zero():
     result = subprocess.run(
         [sys.executable, "main.py", "--version"],
-        cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10,
+        cwd=PROJECT_ROOT, capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     assert result.returncode == 0
     assert "portscanner" in result.stdout
@@ -38,14 +38,13 @@ def test_version_flag_works_without_required_target():
     # confirming it doesn't fail with "the following arguments are required".
     result = subprocess.run(
         [sys.executable, "main.py", "--version"],
-        cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10,
+        cwd=PROJECT_ROOT, capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     assert "required" not in result.stderr.lower()
 
 
 def _serve(ip: str, port: int) -> socket.socket:
-    """Real listening socket on a specific loopback address, for tests
-    that need genuinely distinct hosts rather than mocking the network."""
+    """Start a listening socket on a loopback address for tests."""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((ip, port))
@@ -56,9 +55,13 @@ def _serve(ip: str, port: int) -> socket.socket:
         while True:
             try:
                 conn, _ = s.accept()
-                conn.close()
             except socket.timeout:
                 break
+            except OSError:
+                if s.fileno() == -1:
+                    break
+                raise
+            conn.close()
 
     threading.Thread(target=loop, daemon=True).start()
     return s
@@ -76,7 +79,7 @@ def test_multi_target_scans_each_host_and_writes_separate_reports(tmp_path):
             [sys.executable, "main.py",
              "-t", "127.0.0.2,127.0.0.3",
              "-p", "6100", "--no-ping", "-o", str(out_file)],
-            cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=30,
+            cwd=PROJECT_ROOT, capture_output=True, text=True, encoding="utf-8", timeout=30,
         )
     finally:
         for s in servers:
@@ -111,7 +114,7 @@ def test_single_target_output_filename_is_unchanged():
             result = subprocess.run(
                 [sys.executable, "main.py", "-t", "127.0.0.2",
                  "-p", "6101", "--no-ping", "-o", str(out_file)],
-                cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=15,
+                cwd=PROJECT_ROOT, capture_output=True, text=True, encoding="utf-8", timeout=15,
             )
             assert result.returncode == 0
             assert out_file.exists()
@@ -126,7 +129,7 @@ def test_oversized_target_range_fails_fast_with_clean_exit():
     result = subprocess.run(
         [sys.executable, "main.py", "-t", "10.0.0.0/8", "-p", "80",
          "--no-ping", "--quiet"],
-        cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=10,
+        cwd=PROJECT_ROOT, capture_output=True, text=True, encoding="utf-8", timeout=10,
     )
     assert result.returncode == 1
     assert "limit" in result.stdout.lower()

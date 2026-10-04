@@ -139,6 +139,11 @@ def build_parser() -> argparse.ArgumentParser:
 # ──────────────────────────────────────────────
 
 def main() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8")
+
     parser = build_parser()
     args   = parser.parse_args()
 
