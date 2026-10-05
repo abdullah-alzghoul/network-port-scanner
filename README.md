@@ -17,7 +17,7 @@
 | **Security Notes** | Contextual warnings for dangerous open ports |
 | **Report Formats** | JSON · HTML (dark-themed) · TXT |
 | **Performance** | Multi-threaded (up to 1 000 workers) |
-| **Tested** | 111 automated tests, 89% coverage, CI-enforced on every push |
+| **Tested** | 112 automated tests; automated test runs via GitHub Actions |
 
 ---
 
@@ -129,7 +129,7 @@ network-port-scanner/
 │   ├── display.py             ← Rich terminal UI (tables, panels, live feedback)
 │   ├── utils.py                ← Target resolution, port parsing, host discovery
 │   └── report.py              ← JSON / HTML / TXT report generation
-└── tests/                     ← 96 tests, 89% coverage (see Running Tests below)
+└── tests/                     ← 112 automated tests (see Running Tests below)
 ```
 
 ---
@@ -140,6 +140,13 @@ network-port-scanner/
 pip install -r requirements-dev.txt
 pytest --cov=scanner --cov-report=term-missing
 ```
+
+Verified test results (2026-10-04):
+
+- Windows, Python 3.14.4: **111 passed, 1 skipped**; `scanner` package coverage: **89%**.
+- GitHub Actions, Linux, Python 3.12.14: **110 passed, 2 skipped**; `scanner` package coverage: **87%**.
+
+Both runs collected 112 test cases. Coverage and skipped-test counts vary by environment.
 
 Runs automatically on every push and pull request via GitHub Actions, alongside a separate weekly dependency-vulnerability audit (`pip-audit`). `core.py` and `banner.py` are tested against real local sockets, not mocks — the test suite spins up actual listening servers and scans them.
 
@@ -242,7 +249,7 @@ Genuine output from a real scan (local test servers, so the example is reproduci
 - Multiple output formats (JSON, HTML, TXT)
 - Raw packet crafting with `scapy` (SYN scan)
 - Defensive coding and error handling
-- Automated testing with `pytest` (96 tests, real sockets over mocks where it matters)
+- Automated testing with `pytest` (112 automated tests, including local socket integration tests)
 - CI/CD with GitHub Actions (dependency auditing + test suite on every push)
 
 ---
